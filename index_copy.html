@@ -2,7 +2,7 @@
 
 <html lang="en">
 <head>
-<title>Ad VR test</title>
+<title>Game test</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0, shrink-to-fit=no">
 <meta name="mobile-web-app-capable" content="yes">
@@ -112,6 +112,8 @@ WebVRConfig = {
 -->
 <script src="node_modules/webvr-ui/build/webvr-ui.min.js"></script>
 
+<script src="ray-input-master/build/ray.min.js"></script>
+
 
 <script>
 // Last time the scene was rendered.
@@ -130,6 +132,8 @@ var camera;
 var vrButton;
 
 var step;
+
+var rayInput;
 
 
 function onLoad() {
@@ -160,87 +164,72 @@ function onLoad() {
   var loader = new THREE.TextureLoader();
   loader.load('img/box.png', onTextureLoaded);
 
+  
+
+
   // Create 3D objects.
-  var geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+  var geometry = new THREE.BoxGeometry(0.1, 0.5, 0.8);
   var mapUrl = "images/justdoit.jpg";
   var map = THREE.ImageUtils.loadTexture(mapUrl);
   var material = new THREE.MeshBasicMaterial({ map: map });
   //var material = new THREE.MeshNormalMaterial();
   cube = new THREE.Mesh(geometry, material);
 
-  var stepGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+  var stepGeometry = new THREE.BoxGeometry(1, 0.05, 1);
 
   step = new THREE.Mesh(stepGeometry, material);
 
   //step = new THREE.Mesh(new THREE.BoxGeometry(0.2,0.2,0.1), material);
  /// step.position.set(2,2,2);
 
- step.position.set(1, 1, 10);
+ step.position.set(0, 0, 0);
 
   // Position cube mesh to be right in front of you.
-  cube.position.set(0, controls.userHeight, -2.5);
+  cube.position.set(0, controls.userHeight, -1.5);
 
   // Add cube mesh to your three.js scene
-  scene.add(cube);
+ // scene.add(cube);
 
   scene.add(step);
 
-  var loader = new THREE.FontLoader();
-  //loader.load('mk3_regular.js', function ( font ) {
-  loader.load('helvetiker_regular.typeface.json', function ( font ) {
+  var step2 = new THREE.Mesh(stepGeometry, material);
+  step2.position.set(-1,0,0);
+  scene.add(step2);
 
-  
-  
-    
-    console.log('font is ' + font);
-    var textGeo = new THREE.TextGeometry( "Making shoes since 1964", {
-      font: font,
-      size: 0.1,
-      height: 0.05,
-      curveSegments:10,
-      weight: "regular",
-      bevelThickness:0.001,
-      bevelSize:1,
-      bevelSegments:10,
-      bevelEnabled:false
-    });
-    textGeo.computeBoundingBox();
-    textGeo.computeVertexNormals();
- /*   var textGeo = new THREE.TextGeometry( "THREE.JS", {
-        font: font,
-        size: 20, // font size
-        height: 10, // how much extrusion (how thick / deep are the letters)
-        curveSegments: 12,
-        bevelThickness: 1,
-        bevelSize: 1,
-        bevelEnabled: true
-    });   */
- //   textGeo.computeBoundingBox();
-   var textMaterial = new THREE.MeshPhongMaterial( { color: 0xff0000, specular: 0xffffff } );
-var cubeMat = new THREE.MeshLambertMaterial({color: 0xff3300})
+  var step3 = new THREE.Mesh(stepGeometry, material);
+  step3.position.set(-2,0,0);
+  scene.add(step3);
 
- var text = new THREE.Mesh(textGeo, cubeMat);
- text.position.set(-0.76, controls.userHeight -0.27, -0.8);
-  //  text.castShadow = true;
-    scene.add(text);
+  var step4 = new THREE.Mesh(stepGeometry, material);
+  step4.position.set(-2,0,1);
+  scene.add(step4);
 
-  });
-
-  var lights = [];
-      lights[ 0 ] = new THREE.PointLight( 0xffffff, 1, 0 );
-      lights[ 1 ] = new THREE.PointLight( 0xffffff, 1, 0 );
-      lights[ 2 ] = new THREE.PointLight( 0xffffff, 1, 0 );
-
-      lights[ 0 ].position.set( 0, 200, 0 );
-      lights[ 1 ].position.set( 100, 200, 100 );
-      lights[ 2 ].position.set( - 100, - 200, - 100 );
-
-      scene.add( lights[ 0 ] );
-      scene.add( lights[ 1 ] );
-      scene.add( lights[ 2 ] );
+  var step5 = new THREE.Mesh(stepGeometry, material);
+  step5.position.set(-2,0,-1);
+  scene.add(step5);
 
 
- //   var mesh = new THREE.Mesh( textGeo, textMaterial );
+
+  var endMaterial = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+
+  var step6 = new THREE.Mesh(stepGeometry, endMaterial);
+  step6.position.set(-3,0,-1);
+  scene.add(step6);
+  step6.material.transparent = true;
+  step6.material.opacity = 0.3;
+
+
+  rayInput = new RayInput.default(
+      camera, renderer.domElement);
+  rayInput.setSize(renderer.getSize());
+  console.log('ray input: ' + rayInput + ' .');
+  rayInput.add(step6);
+  rayInput.on('rayover', this.onSelected);
+  rayInput.on('raydown', this.onSelected);
+  rayInput.on('rayout', this.onDeselected);
+  rayInput.on('rayup', this.onDeselected);
+  console.log(rayInput.getMesh());
+  scene.add(rayInput.getMesh());
 
  // scene.add(step);
 
@@ -290,6 +279,20 @@ var cubeMat = new THREE.MeshLambertMaterial({color: 0xff3300})
   });
 }
 
+function onSelected(optMesh) {
+  if (!optMesh) {
+    return;
+  }
+  optMesh.material.opacity = 1;
+}
+
+function onDeselected(optMesh) {
+  if (!optMesh) {
+    return;
+  }
+  optMesh.material.opacity = 0.3;
+}
+
 function onTextureLoaded(texture) {
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
@@ -312,14 +315,6 @@ function onTextureLoaded(texture) {
   setupStage();
 }
 
-function loadFont() {
-  var loader = new THREE.FontLoader();
-    loader.load('mk3_regular.js', function (res) {
-      font = res;
-      createText();
-    });
-}
-
 
 
 // Request animation frame loop function
@@ -338,6 +333,8 @@ function animate(timestamp) {
   effect.render(scene, camera);
 
   vrDisplay.requestAnimationFrame(animate);
+
+  rayInput.update();
 }
 
 function onResize(e) {
